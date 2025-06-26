@@ -32,8 +32,11 @@ function updateTime() {
 
 // Route checking and initialization
 function checkRoute() {
-    const path = window.location.pathname;
-    if (path.includes('nithin_edit_server_url')) {
+    // Check for hash-based routing or URL parameters
+    const hash = window.location.hash;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (hash === '#nithin_edit_server_url' || urlParams.get('page') === 'nithin_edit_server_url') {
         showUrlEditPage();
         return;
     }
@@ -43,20 +46,42 @@ function checkRoute() {
         loadSavedConfig();
         if (API_BASE_URL) {
             testConnection();
+            // Hide config notice if URL is configured
+            const configNotice = document.getElementById('configNotice');
+            if (configNotice) {
+                configNotice.style.display = 'none';
+            }
         } else {
-            showMessage('Please configure your backend URL first. Visit /nithin_edit_server_url to set it up.', 'warning');
+            showConfigNotice();
         }
         
         // Initialize form handlers
         initializeFormHandlers();
         initializeFileUpload();
+        
+        // Listen for hash changes
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#nithin_edit_server_url') {
+                showUrlEditPage();
+            }
+        });
     });
+}
+
+// Show configuration notice
+function showConfigNotice() {
+    const configNotice = document.getElementById('configNotice');
+    if (configNotice) {
+        configNotice.style.display = 'block';
+    }
+    showMessage('Please configure your backend URL first. Click the "Configure Server" button above or use the links in the footer.', 'warning');
 }
 
 // URL Edit Page
 function showUrlEditPage() {
     document.body.className = 'url-edit-only';
     document.body.innerHTML = `
+        <div class="time-display" id="timeDisplay"></div>
         <div class="url-edit-card">
             <h1>Server Configuration</h1>
             <p style="margin-bottom: 24px; color: #6b7280; font-size: 14px;">Configure your backend server URL to connect the control panel</p>
@@ -75,6 +100,15 @@ function showUrlEditPage() {
             </div>
             
             <div id="urlStatus" style="margin-top: 16px; font-weight: 500;"></div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <h3 style="margin-bottom: 12px; color: #374151; font-size: 1.1rem;">How to access this page:</h3>
+                <div style="background: #f9fafb; padding: 16px; border-radius: 8px; text-align: left;">
+                    <p style="margin-bottom: 8px; font-size: 13px; color: #6b7280;">Method 1 (Hash): Add <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">#nithin_edit_server_url</code> to your URL</p>
+                    <p style="margin-bottom: 8px; font-size: 13px; color: #6b7280;">Method 2 (Query): Add <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">?page=nithin_edit_server_url</code> to your URL</p>
+                    <p style="font-size: 13px; color: #6b7280;">Example: <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">https://nithin434.github.io/woat_launch/#nithin_edit_server_url</code></p>
+                </div>
+            </div>
         </div>
     `;
     
@@ -106,7 +140,8 @@ function saveServerUrl() {
 }
 
 function goToMainPage() {
-    window.location.href = window.location.origin + window.location.pathname.replace('nithin_edit_server_url', '');
+    // Remove hash or query parameter and reload
+    window.location.href = window.location.origin + window.location.pathname;
 }
 
 // Configuration Management
@@ -355,26 +390,32 @@ function startStatusUpdates() {
             }
         }
     }, 3000);
-}
-
-// File Upload Handling
+}       
+// if (files.length > 0) {
+//                document.getElementById('cookiesFile').files = files;
+// // File Upload Handling                updateFileName(document.getElementById('cookiesFile'));
 function initializeFileUpload() {
     const fileUpload = document.querySelector('.file-upload');
     
-    if (fileUpload) {
-        fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUpload.classList.add('dragover');
-        });
-
-        fileUpload.addEventListener('dragleave', () => {
-            fileUpload.classList.remove('dragover');
-        });
-
+if (fileUpload) {
+    fileUpload.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUpload.classList.add('dragover');
+    });
+    
+    fileUpload.addEventListener('dragleave', () => {
+        fileUpload.classList.remove('dragover');
+    });
+    
+    const updateFileName = (input) => {
+        const fileName = document.getElementById('fileName');
+        if (fileName) {
+            fileName.textContent = input.files[0] ? input.files[0].name : 'Click to select cookies.json file';
+        }
+    };
         fileUpload.addEventListener('drop', (e) => {
             e.preventDefault();
             fileUpload.classList.remove('dragover');
-            
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 document.getElementById('cookiesFile').files = files;
@@ -384,20 +425,11 @@ function initializeFileUpload() {
     }
 }
 
-function updateFileName(input) {
-    const fileName = document.getElementById('fileName');
-    if (fileName && input.files.length > 0) {
-        fileName.textContent = input.files[0].name;
-    } else if (fileName) {
-        fileName.textContent = 'Click to select cookies.json file';
-    }
-}
-
 // Message Display
 function showMessage(message, type) {
     const existingMessages = document.querySelectorAll('.message');
     existingMessages.forEach(msg => msg.remove());
-
+    
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = message;
@@ -405,7 +437,7 @@ function showMessage(message, type) {
     const container = document.querySelector('.container');
     if (container) {
         container.insertBefore(messageDiv, container.firstChild);
-
+        
         setTimeout(() => {
             messageDiv.remove();
         }, 5000);
