@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .config-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .auth-section {
+            padding: 40px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .bot-controls {
+            display: none;
+            padding: 40px;
+        }
+
+        .bot-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4facfe;
+        }
+
+        .bot-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-running {
+            background: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .status-stopped {
+            background: #e74c3c;
+        }
+
+        .status-unknown {
+            background: #f39c12;
+        }
+
+        .logs {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #4facfe;
+        }
+
+        .file-upload.dragover {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .config-form {
+                flex-direction: column;
+            }
+
+            .form-group {
+                min-width: 100%;
+            }
+        }
+
+        .session-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .remove-session-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            margin-top: 20px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .connection-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+
+        .connection-indicator.connected {
+            background: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Bot Control Panel</h1>
+            <p>Manage your WhatsApp and Instagram bots</p>
+        </div>
+
+        <!-- Backend Configuration Section -->
+        <div class="config-section">
+            <h3>Backend Configuration</h3>
+            <div class="connection-status">
+                <div class="connection-indicator" id="connectionIndicator"></div>
+                <span id="connectionStatus">Checking connection...</span>
+            </div>
+            <div class="config-form">
+                <div class="form-group">
+                    <label for="backendUrl">Backend URL:</label>
+                    <input type="url" id="backendUrl" placeholder="https://use-toward-package-date.trycloudflare.com" value="">
+                </div>
+                <button class="btn btn-small" onclick="testConnection()">Test Connection</button>
+                <button class="btn btn-small" onclick="saveConfig()">Save Config</button>
+            </div>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="auth-section" id="authSection">
+            <h2>Session Authentication</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="uniqueId">Unique ID:</label>
+                    <input type="text" id="uniqueId" required placeholder="Enter your unique identifier">
+                </div>
+                <div class="form-group">
+                    <label for="secretKey">Secret Key:</label>
+                    <input type="password" id="secretKey" required placeholder="Enter your secret key">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email (optional - for new sessions):</label>
+                    <input type="email" id="email" placeholder="your@email.com">
+                    <small>Email will receive your secret key for new sessions</small>
+                </div>
+                <button type="submit" class="btn">Access Control Panel</button>
+            </form>
+        </div>
+
+        <!-- Bot Controls Section -->
+        <div class="bot-controls" id="botControls">
+            <div class="session-info">
+                <h3>Session Information</h3>
+                <p><strong>Session ID:</strong> <span id="sessionId"></span></p>
+                <p><strong>Backend:</strong> <span id="currentBackend"></span></p>
+                <button class="btn remove-session-btn" onclick="removeSession()">Remove Session</button>
+            </div>
+
+            <div class="grid">
+                <!-- WhatsApp Bot Section -->
+                <div class="bot-section">
+                    <h3><span class="status-indicator" id="whatsappStatus"></span>WhatsApp Bot</h3>
+                    <form id="whatsappForm">
+                        <div class="form-group">
+                            <label for="whatsappPersonality">Personality:</label>
+                            <textarea id="whatsappPersonality" rows="4" placeholder="Describe how the bot should behave...">You are a helpful and friendly AI assistant. Be concise but informative in your responses.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="contacts">Contacts (comma-separated or 'ALL'):</label>
+                            <input type="text" id="contacts" placeholder="ALL or contact1,contact2,contact3" value="ALL">
+                        </div>
+                        <div class="form-group">
+                            <label for="excludeContacts">Exclude Contacts (comma-separated):</label>
+                            <input type="text" id="excludeContacts" placeholder="contact1,contact2">
+                        </div>
+                        <button type="button" class="btn" onclick="startWhatsApp()">Start WhatsApp Bot</button>
+                        <button type="button" class="btn btn-danger" onclick="stopBot('whatsapp')">Stop Bot</button>
+                    </form>
+                    <div class="logs" id="whatsappLogs">Waiting for logs...</div>
+                </div>
+
+                <!-- Instagram Bot Section -->
+                <div class="bot-section">
+                    <h3><span class="status-indicator" id="instagramStatus"></span>Instagram Bot</h3>
+                    <form id="instagramForm">
+                        <div class="form-group">
+                            <label for="instagramPersonality">Personality:</label>
+                            <textarea id="instagramPersonality" rows="4" placeholder="Describe how the bot should behave...">You are a helpful and friendly AI assistant. Be concise but informative in your responses.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="users">Target Users (JSON array):</label>
+                            <textarea id="users" rows="3" placeholder='["username1", "username2"]'>[]</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Instagram Cookies File:</label>
+                            <div class="file-upload" onclick="document.getElementById('cookiesFile').click()">
+                                <input type="file" id="cookiesFile" accept=".json" style="display: none" onchange="updateFileName(this)">
+                                <p id="fileName">Click to select cookies.json file</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn" onclick="startInstagram()">Start Instagram Bot</button>
+                        <button type="button" class="btn btn-danger" onclick="stopBot('instagram')">Stop Bot</button>
+                    </form>
+                    <div class="logs" id="instagramLogs">Waiting for logs...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Management
+        let API_BASE_URL = '';
+        let currentSession = null;
+        let statusInterval = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSavedConfig();
+            if (API_BASE_URL) {
+                testConnection();
+            } else {
+                showMessage('Please configure your backend URL first', 'warning');
+            }
+        });
+
+        function loadSavedConfig() {
+            const savedUrl = localStorage.getItem('backendUrl');
+            if (savedUrl) {
+                API_BASE_URL = savedUrl;
+                document.getElementById('backendUrl').value = savedUrl;
+                document.getElementById('currentBackend').textContent = savedUrl;
+            }
+        }
+
+        function saveConfig() {
+            const url = document.getElementById('backendUrl').value.trim();
+            if (!url) {
+                showMessage('Please enter a backend URL', 'error');
+                return;
+            }
+
+            // Remove trailing slash
+            API_BASE_URL = url.replace(/\/$/, '');
+            localStorage.setItem('backendUrl', API_BASE_URL);
+            document.getElementById('currentBackend').textContent = API_BASE_URL;
+            
+            showMessage('Configuration saved successfully', 'success');
+            testConnection();
+        }
+
+        async function testConnection() {
+            const indicator = document.getElementById('connectionIndicator');
+            const status = document.getElementById('connectionStatus');
+            
+            if (!API_BASE_URL) {
+                indicator.classList.remove('connected');
+                status.textContent = 'No backend URL configured';
+                return;
+            }
+
+            status.textContent = 'Testing connection...';
+            indicator.classList.remove('connected');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    indicator.classList.add('connected');
+                    status.textContent = `Connected (${data.activeBots || 0} active bots)`;
+                    showMessage('Backend connection successful', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                indicator.classList.remove('connected');
+                status.textContent = `Connection failed: ${error.message}`;
+                showMessage(`Cannot connect to backend: ${error.message}`, 'error');
+            }
+        }
+
+        // Authentication
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!API_BASE_URL) {
+                showMessage('Please configure backend URL first', 'error');
+                return;
+            }
+
+            const uniqueId = document.getElementById('uniqueId').value;
+            const secretKey = document.getElementById('secretKey').value;
+            const email = document.getElementById('email').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/verify-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    body: JSON.stringify({ uniqueId, secretKey, email })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentSession = { uniqueId, secretKey };
+                    document.getElementById('sessionId').textContent = uniqueId;
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('botControls').style.display = 'block';
+                    showMessage(result.message, 'success');
+                    startStatusUpdates();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Connection error: ' + error.message, 'error');
+            }
+        });
+
+        // Bot Control Functions
+        async function startWhatsApp() {
+            if (!currentSession || !API_BASE_URL) return;
+
+            const formData = new FormData();
+            formData.append('uniqueId', currentSession.uniqueId);
+            formData.append('personality', document.getElementById('whatsappPersonality').value);
+            formData.append('contacts', document.getElementById('contacts').value);
+            formData.append('excludeContacts', document.getElementById('excludeContacts').value);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/start-whatsapp`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    body: formData
+                });
+
+                const result = await response.json();
+                showMessage(result.message, result.success ? 'success' : 'error');
+            } catch (error) {
+                showMessage('Error starting WhatsApp bot: ' + error.message, 'error');
+            }
+        }
+
+        async function startInstagram() {
+            if (!currentSession || !API_BASE_URL) return;
+
+            const cookiesFile = document.getElementById('cookiesFile').files[0];
+            if (!cookiesFile) {
+                showMessage('Please select a cookies file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('uniqueId', currentSession.uniqueId);
+            formData.append('personality', document.getElementById('instagramPersonality').value);
+            formData.append('users', document.getElementById('users').value);
+            formData.append('cookies', cookiesFile);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/start-instagram`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    body: formData
+                });
+
+                const result = await response.json();
+                showMessage(result.message, result.success ? 'success' : 'error');
+            } catch (error) {
+                showMessage('Error starting Instagram bot: ' + error.message, 'error');
+            }
+        }
+
+        async function stopBot(botType) {
+            if (!currentSession || !API_BASE_URL) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/stop-bot`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    body: JSON.stringify({ 
+                        uniqueId: currentSession.uniqueId, 
+                        botType: botType 
+                    })
+                });
+
+                const result = await response.json();
+                showMessage(result.message, result.success ? 'success' : 'error');
+            } catch (error) {
+                showMessage(`Error stopping ${botType} bot: ` + error.message, 'error');
+            }
+        }
+
+        async function removeSession() {
+            if (!currentSession || !API_BASE_URL) return;
+
+            if (!confirm('Are you sure you want to remove this session? This will stop all bots and delete session data.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/remove-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    body: JSON.stringify({ uniqueId: currentSession.uniqueId })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Error removing session: ' + error.message, 'error');
+            }
+        }
+
+        // Status Updates
+        function startStatusUpdates() {
+            if (statusInterval) clearInterval(statusInterval);
+            
+            statusInterval = setInterval(async () => {
+                if (!currentSession || !API_BASE_URL) return;
+
+                // Update WhatsApp status
+                try {
+                    const whatsappResponse = await fetch(`${API_BASE_URL}/bot-status/${currentSession.uniqueId}/whatsapp`, { mode: 'cors' });
+                    const whatsappData = await whatsappResponse.json();
+                    
+                    const whatsappStatus = document.getElementById('whatsappStatus');
+                    whatsappStatus.className = `status-indicator ${whatsappData.running ? 'status-running' : 'status-stopped'}`;
+                    
+                    const whatsappLogs = document.getElementById('whatsappLogs');
+                    whatsappLogs.textContent = whatsappData.logs || 'No logs available';
+                    whatsappLogs.scrollTop = whatsappLogs.scrollHeight;
+                } catch (error) {
+                    const whatsappStatus = document.getElementById('whatsappStatus');
+                    whatsappStatus.className = 'status-indicator status-unknown';
+                }
+
+                // Update Instagram status
+                try {
+                    const instagramResponse = await fetch(`${API_BASE_URL}/bot-status/${currentSession.uniqueId}/instagram`, { mode: 'cors' });
+                    const instagramData = await instagramResponse.json();
+                    
+                    const instagramStatus = document.getElementById('instagramStatus');
+                    instagramStatus.className = `status-indicator ${instagramData.running ? 'status-running' : 'status-stopped'}`;
+                    
+                    const instagramLogs = document.getElementById('instagramLogs');
+                    instagramLogs.textContent = instagramData.logs || 'No logs available';
+                    instagramLogs.scrollTop = instagramLogs.scrollHeight;
+                } catch (error) {
+                    const instagramStatus = document.getElementById('instagramStatus');
+                    instagramStatus.className = 'status-indicator status-unknown';
+                }
+            }, 3000);
+        }
+
+        // Utility Functions
+        function updateFileName(input) {
+            const fileName = document.getElementById('fileName');
+            if (input.files.length > 0) {
+                fileName.textContent = input.files[0].name;
+            } else {
+                fileName.textContent = 'Click to select cookies.json file';
+            }
+        }
+
+        function showMessage(message, type) {
+            const existingMessages = document.querySelectorAll('.message');
+            existingMessages.forEach(msg => msg.remove());
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.firstChild);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // File drag and drop
+        const fileUpload = document.querySelector('.file-upload');
+        
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('cookiesFile').files = files;
+                updateFileName(document.getElementById('cookiesFile'));
+            }
+        });
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+        });
+    </script>
+</body>
+</html>
