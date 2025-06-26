@@ -4,898 +4,168 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Control Panel</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            position: relative;
-            z-index: 1;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle, rgba(255,255,255,0.1) 2px, transparent 2px);
-            background-size: 50px 50px;
-            animation: float 20s linear infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            font-weight: 800;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            position: relative;
-            z-index: 2;
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            position: relative;
-            z-index: 2;
-        }
-
-        .connection-status {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 15px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-            font-size: 14px;
-            z-index: 3;
-        }
-
-        .connection-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #e74c3c;
-            animation: pulse 2s infinite;
-        }
-
-        .connection-indicator.connected {
-            background: #2ecc71;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
-
-        .url-edit-section {
-            padding: 50px;
-            text-align: center;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .url-edit-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .url-edit-form {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .auth-section {
-            padding: 50px;
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-        }
-
-        .auth-section h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 40px;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-
-        .auth-form {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 1rem;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 16px 20px;
-            border: 3px solid rgba(102, 126, 234, 0.2);
-            border-radius: 15px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
-            font-family: inherit;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin: 8px;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn:disabled {
-            background: #bbb;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
-        }
-
-        .btn-danger:hover {
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
-        }
-
-        .btn-large {
-            padding: 20px 40px;
-            font-size: 18px;
-            width: 100%;
-        }
-
-        .bot-controls {
-            display: none;
-            padding: 50px;
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-        }
-
-        .session-info {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 25px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            border-left: 6px solid #667eea;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .session-info h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-
-        .bot-section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
-            border-left: 6px solid #667eea;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .bot-section:hover {
-            transform: translateY(-5px);
-        }
-
-        .bot-section h3 {
-            color: #2c3e50;
-            margin-bottom: 25px;
-            font-size: 1.8rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            margin-right: 12px;
-            animation: pulse 2s infinite;
-        }
-
-        .status-running {
-            background: #2ecc71;
-            box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
-        }
-
-        .status-stopped {
-            background: #e74c3c;
-            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
-        }
-
-        .status-unknown {
-            background: #f39c12;
-            box-shadow: 0 0 15px rgba(243, 156, 18, 0.5);
-        }
-
-        .logs {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 25px;
-            border-radius: 15px;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 13px;
-            max-height: 350px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            margin-top: 25px;
-            box-shadow: inset 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .message {
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            font-weight: 500;
-            font-size: 16px;
-            border-left: 5px solid;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-
-        .message.success {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-            border-left-color: #28a745;
-        }
-
-        .message.error {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #721c24;
-            border-left-color: #dc3545;
-        }
-
-        .message.warning {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            color: #856404;
-            border-left-color: #ffc107;
-        }
-
-        .file-upload {
-            border: 3px dashed rgba(102, 126, 234, 0.3);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(102, 126, 234, 0.05);
-        }
-
-        .file-upload:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .file-upload.dragover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.15);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                margin: 10px;
-                border-radius: 15px;
-            }
-            
-            .header h1 {
-                font-size: 2.2rem;
-            }
-
-            .connection-status {
-                position: static;
-                justify-content: center;
-                margin-top: 20px;
-            }
-
-            .auth-section, .bot-controls, .url-edit-section {
-                padding: 30px 20px;
-            }
-        }
-
-        .remove-session-btn {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            margin-top: 20px;
-        }
-
-        /* Special styling for URL edit page */
-        .url-edit-only {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .url-edit-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 50px;
-            border-radius: 25px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
-            backdrop-filter: blur(20px);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .url-edit-card h1 {
-            color: #2c3e50;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-            font-weight: 800;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 30px;
-        }
-
-        .input-group input {
-            padding-left: 50px;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 20px;
-            color: #667eea;
-            z-index: 2;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="time-display" id="timeDisplay"></div>
+    
     <div class="container" id="mainContainer">
-        <div class="header">
+        <header class="header">
             <div class="connection-status">
                 <div class="connection-indicator" id="connectionIndicator"></div>
                 <span id="connectionStatus">Checking connection...</span>
             </div>
-            <h1>🤖 Bot Control Panel</h1>
-            <p>Manage your WhatsApp and Instagram bots with ease</p>
-        </div>
+            <h1>Bot Control Panel</h1>
+            <p>Professional WhatsApp and Instagram Bot Management System</p>
+        </header>
 
         <!-- Authentication Section -->
-        <div class="auth-section" id="authSection">
-            <h2>🔐 Session Login</h2>
-            <form id="authForm" class="auth-form">
-                <div class="form-group">
-                    <label for="uniqueId">👤 Name:</label>
-                    <input type="text" id="uniqueId" required placeholder="Enter your name">
-                </div>
-                <div class="form-group">
-                    <label for="secretKey">🔑 Password:</label>
-                    <input type="password" id="secretKey" required placeholder="Enter your password">
-                </div>
-                <button type="submit" class="btn btn-large">Access Control Panel</button>
-            </form>
-        </div>
+        <section class="auth-section" id="authSection">
+            <div class="auth-container">
+                <h2>Session Authentication</h2>
+                <form id="authForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="uniqueId">Username:</label>
+                        <input type="text" id="uniqueId" required placeholder="Enter your username">
+                    </div>
+                    <div class="form-group">
+                        <label for="secretKey">Password:</label>
+                        <input type="password" id="secretKey" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large">Access Control Panel</button>
+                </form>
+            </div>
+        </section>
 
         <!-- Bot Controls Section -->
-        <div class="bot-controls" id="botControls">
+        <section class="bot-controls" id="botControls">
             <div class="session-info">
-                <h3>📊 Session Information</h3>
-                <p><strong>Session ID:</strong> <span id="sessionId"></span></p>
-                <p><strong>Backend:</strong> <span id="currentBackend"></span></p>
-                <button class="btn remove-session-btn" onclick="removeSession()">🗑️ Remove Session</button>
+                <h3>Session Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Session ID:</span>
+                        <span class="info-value" id="sessionId"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Backend Server:</span>
+                        <span class="info-value" id="currentBackend"></span>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="removeSession()">Remove Session</button>
             </div>
 
-            <div class="grid">
+            <div class="bot-grid">
                 <!-- WhatsApp Bot Section -->
                 <div class="bot-section">
-                    <h3><span class="status-indicator" id="whatsappStatus"></span>📱 WhatsApp Bot</h3>
-                    <form id="whatsappForm">
+                    <div class="bot-header">
+                        <h3>
+                            <span class="status-indicator" id="whatsappStatus"></span>
+                            WhatsApp Bot
+                        </h3>
+                    </div>
+                    
+                    <form id="whatsappForm" class="bot-form">
                         <div class="form-group">
-                            <label for="whatsappPersonality">🎭 Personality:</label>
-                            <textarea id="whatsappPersonality" rows="4" placeholder="Describe how the bot should behave...">You are a helpful and friendly AI assistant. Be concise but informative in your responses.</textarea>
+                            <label for="whatsappPersonality">Bot Personality:</label>
+                            <textarea id="whatsappPersonality" rows="4" placeholder="Define how the bot should respond to messages...">You are a professional and helpful AI assistant. Provide clear, concise, and informative responses.</textarea>
                         </div>
-                        <div class="form-group">
-                            <label for="contacts">👥 Contacts (comma-separated or 'ALL'):</label>
-                            <input type="text" id="contacts" placeholder="ALL or contact1,contact2,contact3" value="ALL">
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contacts">Target Contacts:</label>
+                                <input type="text" id="contacts" placeholder="ALL or contact1,contact2,contact3" value="ALL">
+                                <small>Use 'ALL' for all contacts or comma-separated list</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="excludeContacts">Exclude Contacts:</label>
+                                <input type="text" id="excludeContacts" placeholder="contact1,contact2">
+                                <small>Comma-separated list of contacts to exclude</small>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="excludeContacts">🚫 Exclude Contacts (comma-separated):</label>
-                            <input type="text" id="excludeContacts" placeholder="contact1,contact2">
+                        
+                        <div class="button-group">
+                            <button type="button" class="btn btn-success" onclick="startWhatsApp()">Start Bot</button>
+                            <button type="button" class="btn btn-danger" onclick="stopBot('whatsapp')">Stop Bot</button>
                         </div>
-                        <button type="button" class="btn" onclick="startWhatsApp()">▶️ Start WhatsApp Bot</button>
-                        <button type="button" class="btn btn-danger" onclick="stopBot('whatsapp')">⏹️ Stop Bot</button>
                     </form>
-                    <div class="logs" id="whatsappLogs">Waiting for logs...</div>
+                    
+                    <div class="logs-container">
+                        <h4>Bot Logs</h4>
+                        <div class="logs" id="whatsappLogs">Waiting for logs...</div>
+                    </div>
                 </div>
 
                 <!-- Instagram Bot Section -->
                 <div class="bot-section">
-                    <h3><span class="status-indicator" id="instagramStatus"></span>📸 Instagram Bot</h3>
-                    <form id="instagramForm">
+                    <div class="bot-header">
+                        <h3>
+                            <span class="status-indicator" id="instagramStatus"></span>
+                            Instagram Bot
+                        </h3>
+                    </div>
+                    
+                    <form id="instagramForm" class="bot-form">
                         <div class="form-group">
-                            <label for="instagramPersonality">🎭 Personality:</label>
-                            <textarea id="instagramPersonality" rows="4" placeholder="Describe how the bot should behave...">You are a helpful and friendly AI assistant. Be concise but informative in your responses.</textarea>
+                            <label for="instagramPersonality">Bot Personality:</label>
+                            <textarea id="instagramPersonality" rows="4" placeholder="Define how the bot should respond to messages...">You are a professional and helpful AI assistant. Provide clear, concise, and informative responses.</textarea>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="users">🎯 Target Users (JSON array):</label>
+                            <label for="users">Target Users:</label>
                             <textarea id="users" rows="3" placeholder='["username1", "username2"]'>[]</textarea>
+                            <small>JSON array format of Instagram usernames to monitor</small>
                         </div>
+                        
                         <div class="form-group">
-                            <label>🍪 Instagram Cookies File:</label>
+                            <label>Session Cookies File:</label>
                             <div class="file-upload" onclick="document.getElementById('cookiesFile').click()">
                                 <input type="file" id="cookiesFile" accept=".json" style="display: none" onchange="updateFileName(this)">
-                                <p id="fileName">📁 Click to select cookies.json file</p>
+                                <div class="file-upload-content">
+                                    <div class="file-upload-icon">📁</div>
+                                    <p id="fileName">Click to select cookies.json file</p>
+                                    <small>Upload your Instagram session cookies file</small>
+                                </div>
                             </div>
                         </div>
-                        <button type="button" class="btn" onclick="startInstagram()">▶️ Start Instagram Bot</button>
-                        <button type="button" class="btn btn-danger" onclick="stopBot('instagram')">⏹️ Stop Bot</button>
+                        
+                        <div class="button-group">
+                            <button type="button" class="btn btn-success" onclick="startInstagram()">Start Bot</button>
+                            <button type="button" class="btn btn-danger" onclick="stopBot('instagram')">Stop Bot</button>
+                        </div>
                     </form>
-                    <div class="logs" id="instagramLogs">Waiting for logs...</div>
+                    
+                    <div class="logs-container">
+                        <h4>Bot Logs</h4>
+                        <div class="logs" id="instagramLogs">Waiting for logs...</div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 
-    <script>
-        // Configuration Management
-        let API_BASE_URL = '';
-        let currentSession = null;
-        let statusInterval = null;
-
-        // Check if this is the URL edit route
-        function checkRoute() {
-            const path = window.location.pathname;
-            if (path.includes('nithin_edit_server_url')) {
-                showUrlEditPage();
-                return;
-            }
-            
-            // Normal page initialization
-            document.addEventListener('DOMContentLoaded', () => {
-                loadSavedConfig();
-                if (API_BASE_URL) {
-                    testConnection();
-                } else {
-                    showMessage('⚠️ Please configure your backend URL first. Visit /nithin_edit_server_url to set it up.', 'warning');
-                }
-            });
-        }
-
-        function showUrlEditPage() {
-            document.body.className = 'url-edit-only';
-            document.body.innerHTML = `
-                <div class="url-edit-card">
-                    <h1>⚙️ Server Configuration</h1>
-                    <p style="margin-bottom: 30px; color: #666; font-size: 16px;">Configure your backend server URL</p>
-                    
-                    <div class="input-group">
-                        <span class="input-icon">🌐</span>
-                        <input type="url" id="serverUrl" placeholder="https://your-backend-url.com" value="">
-                    </div>
-                    
-                    <button class="btn btn-large" onclick="saveServerUrl()">💾 Save Configuration</button>
-                    
-                    <div style="margin-top: 30px;">
-                        <button class="btn" onclick="goToMainPage()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                            🏠 Go to Main Panel
-                        </button>
-                    </div>
-                    
-                    <div id="urlStatus" style="margin-top: 20px; font-weight: 600;"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="support-info">
+                <h4>Need Support?</h4>
+                <p>For technical assistance or inquiries:</p>
+                <div class="contact-links">
+                    <a href="mailto:nithinjambula89@gmail.com" class="contact-link">
+                        <span class="contact-icon">✉</span>
+                        nithinjambula89@gmail.com
+                    </a>
+                    <a href="https://www.linkedin.com/in/nithin-jambula-0b3264298/" target="_blank" class="contact-link">
+                        <span class="contact-icon">💼</span>
+                        LinkedIn Profile
+                    </a>
                 </div>
-            `;
-            
-            // Load existing URL
-            const savedUrl = localStorage.getItem('backendUrl');
-            if (savedUrl) {
-                document.getElementById('serverUrl').value = savedUrl;
-            }
-        }
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Bot Control Panel. Professional bot management solution.</p>
+            </div>
+        </div>
+    </footer>
 
-        function saveServerUrl() {
-            const url = document.getElementById('serverUrl').value.trim();
-            if (!url) {
-                document.getElementById('urlStatus').innerHTML = '<span style="color: #e74c3c;">❌ Please enter a valid URL</span>';
-                return;
-            }
-
-            // Remove trailing slash
-            const cleanUrl = url.replace(/\/$/, '');
-            localStorage.setItem('backendUrl', cleanUrl);
-            
-            document.getElementById('urlStatus').innerHTML = '<span style="color: #28a745;">✅ Configuration saved successfully!</span>';
-            
-            setTimeout(() => {
-                document.getElementById('urlStatus').innerHTML = '<span style="color: #666;">Ready to use the main panel</span>';
-            }, 2000);
-        }
-
-        function goToMainPage() {
-            window.location.href = window.location.origin + window.location.pathname.replace('nithin_edit_server_url', '');
-        }
-
-        // Initialize based on route
-        checkRoute();
-
-        function loadSavedConfig() {
-            const savedUrl = localStorage.getItem('backendUrl');
-            if (savedUrl) {
-                API_BASE_URL = savedUrl;
-                document.getElementById('currentBackend').textContent = savedUrl;
-            }
-        }
-
-        async function testConnection() {
-            const indicator = document.getElementById('connectionIndicator');
-            const status = document.getElementById('connectionStatus');
-            
-            if (!API_BASE_URL) {
-                indicator.classList.remove('connected');
-                status.textContent = 'No backend URL configured';
-                return;
-            }
-
-            status.textContent = 'Testing connection...';
-            indicator.classList.remove('connected');
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/health`, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    indicator.classList.add('connected');
-                    status.textContent = `✅ Connected (${data.activeBots || 0} active bots)`;
-                    showMessage('🎉 Backend connection successful', 'success');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                indicator.classList.remove('connected');
-                status.textContent = `❌ Connection failed: ${error.message}`;
-                showMessage(`🔌 Cannot connect to backend: ${error.message}`, 'error');
-            }
-        }
-
-        // Authentication
-        document.getElementById('authForm')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!API_BASE_URL) {
-                showMessage('⚠️ Please configure backend URL first. Visit /nithin_edit_server_url', 'error');
-                return;
-            }
-
-            const uniqueId = document.getElementById('uniqueId').value;
-            const secretKey = document.getElementById('secretKey').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/verify-session`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    mode: 'cors',
-                    body: JSON.stringify({ uniqueId, secretKey })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    currentSession = { uniqueId, secretKey };
-                    document.getElementById('sessionId').textContent = uniqueId;
-                    document.getElementById('authSection').style.display = 'none';
-                    document.getElementById('botControls').style.display = 'block';
-                    showMessage('🎉 ' + result.message, 'success');
-                    startStatusUpdates();
-                } else {
-                    showMessage('❌ ' + result.message, 'error');
-                }
-            } catch (error) {
-                showMessage('🔌 Connection error: ' + error.message, 'error');
-            }
-        });
-
-        // Bot Control Functions
-        async function startWhatsApp() {
-            if (!currentSession || !API_BASE_URL) return;
-
-            const formData = new FormData();
-            formData.append('uniqueId', currentSession.uniqueId);
-            formData.append('personality', document.getElementById('whatsappPersonality').value);
-            formData.append('contacts', document.getElementById('contacts').value);
-            formData.append('excludeContacts', document.getElementById('excludeContacts').value);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/start-whatsapp`, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: formData
-                });
-
-                const result = await response.json();
-                showMessage((result.success ? '✅ ' : '❌ ') + result.message, result.success ? 'success' : 'error');
-            } catch (error) {
-                showMessage('❌ Error starting WhatsApp bot: ' + error.message, 'error');
-            }
-        }
-
-        async function startInstagram() {
-            if (!currentSession || !API_BASE_URL) return;
-
-            const cookiesFile = document.getElementById('cookiesFile').files[0];
-            if (!cookiesFile) {
-                showMessage('📁 Please select a cookies file', 'error');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('uniqueId', currentSession.uniqueId);
-            formData.append('personality', document.getElementById('instagramPersonality').value);
-            formData.append('users', document.getElementById('users').value);
-            formData.append('cookies', cookiesFile);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/start-instagram`, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: formData
-                });
-
-                const result = await response.json();
-                showMessage((result.success ? '✅ ' : '❌ ') + result.message, result.success ? 'success' : 'error');
-            } catch (error) {
-                showMessage('❌ Error starting Instagram bot: ' + error.message, 'error');
-            }
-        }
-
-        async function stopBot(botType) {
-            if (!currentSession || !API_BASE_URL) return;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/stop-bot`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    mode: 'cors',
-                    body: JSON.stringify({ 
-                        uniqueId: currentSession.uniqueId, 
-                        botType: botType 
-                    })
-                });
-
-                const result = await response.json();
-                showMessage((result.success ? '✅ ' : '❌ ') + result.message, result.success ? 'success' : 'error');
-            } catch (error) {
-                showMessage(`❌ Error stopping ${botType} bot: ` + error.message, 'error');
-            }
-        }
-
-        async function removeSession() {
-            if (!currentSession || !API_BASE_URL) return;
-
-            if (!confirm('🗑️ Are you sure you want to remove this session? This will stop all bots and delete session data.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/remove-session`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    mode: 'cors',
-                    body: JSON.stringify({ uniqueId: currentSession.uniqueId })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage('✅ ' + result.message, 'success');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    showMessage('❌ ' + result.message, 'error');
-                }
-            } catch (error) {
-                showMessage('❌ Error removing session: ' + error.message, 'error');
-            }
-        }
-
-        // Status Updates
-        function startStatusUpdates() {
-            if (statusInterval) clearInterval(statusInterval);
-            
-            statusInterval = setInterval(async () => {
-                if (!currentSession || !API_BASE_URL) return;
-
-                // Update WhatsApp status
-                try {
-                    const whatsappResponse = await fetch(`${API_BASE_URL}/bot-status/${currentSession.uniqueId}/whatsapp`, { mode: 'cors' });
-                    const whatsappData = await whatsappResponse.json();
-                    
-                    const whatsappStatus = document.getElementById('whatsappStatus');
-                    whatsappStatus.className = `status-indicator ${whatsappData.running ? 'status-running' : 'status-stopped'}`;
-                    
-                    const whatsappLogs = document.getElementById('whatsappLogs');
-                    whatsappLogs.textContent = whatsappData.logs || 'No logs available';
-                    whatsappLogs.scrollTop = whatsappLogs.scrollHeight;
-                } catch (error) {
-                    const whatsappStatus = document.getElementById('whatsappStatus');
-                    whatsappStatus.className = 'status-indicator status-unknown';
-                }
-
-                // Update Instagram status
-                try {
-                    const instagramResponse = await fetch(`${API_BASE_URL}/bot-status/${currentSession.uniqueId}/instagram`, { mode: 'cors' });
-                    const instagramData = await instagramResponse.json();
-                    
-                    const instagramStatus = document.getElementById('instagramStatus');
-                    instagramStatus.className = `status-indicator ${instagramData.running ? 'status-running' : 'status-stopped'}`;
-                    
-                    const instagramLogs = document.getElementById('instagramLogs');
-                    instagramLogs.textContent = instagramData.logs || 'No logs available';
-                    instagramLogs.scrollTop = instagramLogs.scrollHeight;
-                } catch (error) {
-                    const instagramStatus = document.getElementById('instagramStatus');
-                    instagramStatus.className = 'status-indicator status-unknown';
-                }
-            }, 3000);
-        }
-
-        // Utility Functions
-        function updateFileName(input) {
-            const fileName = document.getElementById('fileName');
-            if (input.files.length > 0) {
-                fileName.textContent = '📄 ' + input.files[0].name;
-            } else {
-                fileName.textContent = '📁 Click to select cookies.json file';
-            }
-        }
-
-        function showMessage(message, type) {
-            const existingMessages = document.querySelectorAll('.message');
-            existingMessages.forEach(msg => msg.remove());
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = message;
-            
-            const container = document.querySelector('.container');
-            if (container) {
-                container.insertBefore(messageDiv, container.firstChild);
-
-                setTimeout(() => {
-                    messageDiv.remove();
-                }, 5000);
-            }
-        }
-
-        // File drag and drop
-        const fileUpload = document.querySelector('.file-upload');
-        
-        if (fileUpload) {
-            fileUpload.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                fileUpload.classList.add('dragover');
-            });
-
-            fileUpload.addEventListener('dragleave', () => {
-                fileUpload.classList.remove('dragover');
-            });
-
-            fileUpload.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileUpload.classList.remove('dragover');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    document.getElementById('cookiesFile').files = files;
-                    updateFileName(document.getElementById('cookiesFile'));
-                }
-            });
-        }
-
-        // Cleanup
-        window.addEventListener('beforeunload', () => {
-            if (statusInterval) {
-                clearInterval(statusInterval);
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
