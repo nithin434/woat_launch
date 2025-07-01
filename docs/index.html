@@ -428,6 +428,19 @@
           <!-- Login Section -->
         <div class="login-section" id="loginSection" style="max-width: 500px;">
             <h2>Enter Your Session Details</h2>
+            
+            <!-- Add Server Connection Test Section -->
+            <div class="credentials-info" style="background: #1a1f2e; border-color: #58a6ff;">
+                <div class="secure-badge" style="background: #1f6feb;">🌐 CONNECTION TEST</div>
+                <br>
+                <strong>Server Status:</strong> <span id="serverStatus" style="color: #f85149;">Not tested</span>
+                <br><br>
+                <button class="btn" onclick="testServerConnection()" style="font-size: 12px; padding: 4px 8px;">
+                    🔍 Test Server Connection
+                </button>
+                <div id="connectionDetails" style="margin-top: 8px; font-size: 11px; color: #7d8590;"></div>
+            </div>
+            
             <div class="credentials-info">
                 <div class="secure-badge">🔐 SECURE SESSION</div>
                 <br>
@@ -559,6 +572,100 @@
         let logInterval = null;
         let serverUrl = 'https://receives-elections-tablet-void.trycloudflare.com';
         
+        // Test server connection with detailed debugging
+        async function testServerConnection() {
+            const statusEl = document.getElementById('serverStatus');
+            const detailsEl = document.getElementById('connectionDetails');
+            
+            statusEl.textContent = 'Testing...';
+            statusEl.style.color = '#ffbf00';
+            detailsEl.innerHTML = '';
+            
+            try {
+                console.log('🔍 Testing connection to:', serverUrl);
+                detailsEl.innerHTML = `Testing: ${serverUrl}`;
+                
+                // Test 1: Basic fetch to health endpoint
+                console.log('📡 Attempting health check...');
+                const startTime = Date.now();
+                
+                const response = await fetch(`${serverUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(10000) // 10 second timeout
+                });
+                
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                console.log('📡 Response received:', response.status, response.statusText);
+                console.log('⏱️ Response time:', responseTime + 'ms');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Health check successful:', data);
+                    
+                    statusEl.textContent = 'Connected ✅';
+                    statusEl.style.color = '#3fb950';
+                    detailsEl.innerHTML = `
+                        ✅ Server is reachable<br>
+                        📡 Response time: ${responseTime}ms<br>
+                        🔧 Status: ${data.status || 'OK'}<br>
+                        💬 Message: ${data.message || 'Server running'}
+                    `;
+                } else {
+                    console.error('❌ Server responded with error:', response.status, response.statusText);
+                    
+                    statusEl.textContent = 'Server Error ❌';
+                    statusEl.style.color = '#f85149';
+                    detailsEl.innerHTML = `
+                        ❌ Server responded with error<br>
+                        📡 HTTP Status: ${response.status}<br>
+                        💬 Status Text: ${response.statusText}<br>
+                        ⏱️ Response time: ${responseTime}ms
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ Connection test failed:', error);
+                
+                statusEl.textContent = 'Connection Failed ❌';
+                statusEl.style.color = '#f85149';
+                
+                let errorDetails = '';
+                
+                if (error.name === 'AbortError') {
+                    errorDetails = `
+                        ⏱️ Connection timeout (>10s)<br>
+                        🔍 Server may be down or unreachable<br>
+                        🌐 Check if URL is correct
+                    `;
+                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    errorDetails = `
+                        🚫 Network request blocked<br>
+                        🔍 Possible causes:<br>
+                        • Server is down<br>
+                        • CORS not configured<br>
+                        • Firewall blocking request<br>
+                        • Invalid URL
+                    `;
+                } else {
+                    errorDetails = `
+                        ❌ Error: ${error.name}<br>
+                        💬 Message: ${error.message}<br>
+                        🔍 Check browser console for details
+                    `;
+                }
+                
+                detailsEl.innerHTML = errorDetails;
+            }
+        }
+        
+        // Enhanced verify session with better error handling
         function verifySession() {
             const uniqueId = document.getElementById('uniqueId').value.trim();
             const secretKey = document.getElementById('secretKey').value.trim();
@@ -577,6 +684,10 @@
             }
             
             showLoginStatus('🔐 Connecting to secure server...', 'success');
+            console.log('🔐 Attempting session verification...');
+            console.log('📡 Server URL:', serverUrl);
+            console.log('🆔 Unique ID:', uniqueId);
+            console.log('📧 Email:', email);
             
             fetch(`${serverUrl}/verify-session`, {
                 method: 'POST',
@@ -588,12 +699,16 @@
                 body: JSON.stringify({ uniqueId, secretKey, email })
             })
             .then(response => {
+                console.log('📡 Session verification response:', response.status, response.statusText);
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('✅ Session verification result:', data);
+                
                 if (data.success) {
                     currentUniqueId = uniqueId;
                     document.getElementById('loginSection').style.display = 'none';
@@ -606,8 +721,16 @@
                 }
             })
             .catch(error => {
-                console.error('Connection error:', error);
-                showLoginStatus(`❌ Connection error: ${error.message}`, 'error');
+                console.error('❌ Session verification error:', error);
+                
+                let userMessage = '';
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    userMessage = 'Cannot connect to server. Please test connection first.';
+                } else {
+                    userMessage = error.message;
+                }
+                
+                showLoginStatus(`❌ Connection error: ${userMessage}`, 'error');
             });
         }
         
@@ -834,6 +957,12 @@
                     startAutoRefresh();
                 }
             }
+        });
+        
+        // Run connection test on page load
+        window.addEventListener('load', function() {
+            console.log('🚀 Page loaded, testing server connection...');
+            setTimeout(testServerConnection, 1000);
         });
     </script>
 </body>
