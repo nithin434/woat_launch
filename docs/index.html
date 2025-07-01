@@ -572,7 +572,7 @@
         let logInterval = null;
         let serverUrl = 'https://receives-elections-tablet-void.trycloudflare.com';
         
-        // Test server connection with detailed debugging
+        // Enhanced server connection test with multiple endpoints
         async function testServerConnection() {
             const statusEl = document.getElementById('serverStatus');
             const detailsEl = document.getElementById('connectionDetails');
@@ -581,87 +581,124 @@
             statusEl.style.color = '#ffbf00';
             detailsEl.innerHTML = '';
             
-            try {
-                console.log('🔍 Testing connection to:', serverUrl);
-                detailsEl.innerHTML = `Testing: ${serverUrl}`;
-                
-                // Test 1: Basic fetch to health endpoint
-                console.log('📡 Attempting health check...');
-                const startTime = Date.now();
-                
-                const response = await fetch(`${serverUrl}/health`, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(10000) // 10 second timeout
-                });
-                
-                const endTime = Date.now();
-                const responseTime = endTime - startTime;
-                
-                console.log('📡 Response received:', response.status, response.statusText);
-                console.log('⏱️ Response time:', responseTime + 'ms');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Health check successful:', data);
+            console.log('🔍 Testing connection to:', serverUrl);
+            
+            // Test multiple endpoints
+            const endpoints = ['/health', '/cors-test', '/'];
+            let successfulEndpoint = null;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    console.log(`📡 Testing endpoint: ${endpoint}`);
+                    detailsEl.innerHTML = `Testing: ${serverUrl}${endpoint}`;
                     
-                    statusEl.textContent = 'Connected ✅';
-                    statusEl.style.color = '#3fb950';
-                    detailsEl.innerHTML = `
-                        ✅ Server is reachable<br>
-                        📡 Response time: ${responseTime}ms<br>
-                        🔧 Status: ${data.status || 'OK'}<br>
-                        💬 Message: ${data.message || 'Server running'}
-                    `;
-                } else {
-                    console.error('❌ Server responded with error:', response.status, response.statusText);
+                    const startTime = Date.now();
                     
-                    statusEl.textContent = 'Server Error ❌';
-                    statusEl.style.color = '#f85149';
-                    detailsEl.innerHTML = `
-                        ❌ Server responded with error<br>
-                        📡 HTTP Status: ${response.status}<br>
-                        💬 Status Text: ${response.statusText}<br>
-                        ⏱️ Response time: ${responseTime}ms
-                    `;
+                    const response = await fetch(`${serverUrl}${endpoint}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        signal: AbortSignal.timeout(15000) // 15 second timeout
+                    });
+                    
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+                    
+                    console.log(`📡 Response from ${endpoint}:`, response.status, response.statusText);
+                    
+                    if (response.ok) {
+                        let data = {};
+                        try {
+                            data = await response.json();
+                        } catch (e) {
+                            data = { message: 'Server responded successfully' };
+                        }
+                        
+                        console.log(`✅ ${endpoint} successful:`, data);
+                        
+                        statusEl.textContent = 'Connected ✅';
+                        statusEl.style.color = '#3fb950';
+                        detailsEl.innerHTML = `
+                            ✅ Server is reachable via ${endpoint}<br>
+                            📡 Response time: ${responseTime}ms<br>
+                            🔧 Status: ${data.status || 'OK'}<br>
+                            💬 Message: ${data.message || 'Server running'}<br>
+                            🌐 CORS: ${data.cors || 'enabled'}
+                        `;
+                        
+                        successfulEndpoint = endpoint;
+                        break;
+                    } else {
+                        console.warn(`⚠️ ${endpoint} responded with:`, response.status, response.statusText);
+                    }
+                    
+                } catch (error) {
+                    console.warn(`❌ ${endpoint} failed:`, error.message);
+                    
+                    if (endpoint === endpoints[endpoints.length - 1] && !successfulEndpoint) {
+                        // This is the last endpoint and none worked
+                        statusEl.textContent = 'Connection Failed ❌';
+                        statusEl.style.color = '#f85149';
+                        
+                        let errorDetails = '';
+                        
+                        if (error.name === 'AbortError') {
+                            errorDetails = `
+                                ⏱️ Connection timeout (>15s)<br>
+                                🔍 Server may be down or unreachable<br>
+                                🌐 Check if server URL is correct
+                            `;
+                        } else if (error.message.includes('CORS')) {
+                            errorDetails = `
+                                🚫 CORS policy blocked the request<br>
+                                🔍 Server CORS is not properly configured<br>
+                                💡 Ask server admin to add CORS headers<br>
+                                🌐 Origin: https://nithin434.github.io
+                            `;
+                        } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                            errorDetails = `
+                                🚫 Network request blocked<br>
+                                🔍 Possible causes:<br>
+                                • Server is down: ${serverUrl}<br>
+                                • CORS not configured on server<br>
+                                • Firewall blocking request<br>
+                                • Invalid/expired tunnel URL<br><br>
+                                💡 Try refreshing the tunnel URL
+                            `;
+                        } else {
+                            errorDetails = `
+                                ❌ Error: ${error.name}<br>
+                                💬 Message: ${error.message}<br>
+                                🔍 Check browser console for details
+                            `;
+                        }
+                        
+                        detailsEl.innerHTML = errorDetails;
+                    }
                 }
+            }
+            
+            if (!successfulEndpoint) {
+                console.error('❌ All endpoints failed');
                 
-            } catch (error) {
-                console.error('❌ Connection test failed:', error);
-                
-                statusEl.textContent = 'Connection Failed ❌';
-                statusEl.style.color = '#f85149';
-                
-                let errorDetails = '';
-                
-                if (error.name === 'AbortError') {
-                    errorDetails = `
-                        ⏱️ Connection timeout (>10s)<br>
-                        🔍 Server may be down or unreachable<br>
-                        🌐 Check if URL is correct
-                    `;
-                } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    errorDetails = `
-                        🚫 Network request blocked<br>
-                        🔍 Possible causes:<br>
-                        • Server is down<br>
-                        • CORS not configured<br>
-                        • Firewall blocking request<br>
-                        • Invalid URL
-                    `;
-                } else {
-                    errorDetails = `
-                        ❌ Error: ${error.name}<br>
-                        💬 Message: ${error.message}<br>
-                        🔍 Check browser console for details
-                    `;
+                // Try one more test with a simpler request
+                try {
+                    console.log('🔄 Attempting simple request test...');
+                    const simpleResponse = await fetch(serverUrl, {
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    
+                    console.log('📡 Simple request succeeded, likely a CORS issue');
+                    detailsEl.innerHTML += `<br><br>🔍 Server appears to be running but CORS is blocking requests from your domain.`;
+                    
+                } catch (e) {
+                    console.log('❌ Simple request also failed');
+                    detailsEl.innerHTML += `<br><br>❌ Server appears to be completely unreachable.`;
                 }
-                
-                detailsEl.innerHTML = errorDetails;
             }
         }
         
@@ -962,6 +999,7 @@
         // Run connection test on page load
         window.addEventListener('load', function() {
             console.log('🚀 Page loaded, testing server connection...');
+            console.log('🌐 Frontend origin:', window.location.origin);
             setTimeout(testServerConnection, 1000);
         });
     </script>
