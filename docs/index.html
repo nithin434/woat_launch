@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>WOAT - Bot Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOAT - Bot Control Panel</title>
     <style>
         * {
             margin: 0;
@@ -204,7 +205,6 @@
         
         .form-group {
             margin-bottom: 16px;
-            ;
         }
         
         .form-group label {
@@ -412,17 +412,18 @@
     </style>
 </head>
 <body>
-    <div class="container">        <div class="header">
+    <div class="container">
+        <div class="header">
             <button class="remove-session-btn" id="removeSessionBtn" onclick="removeSession()">Remove Session</button>
             <h1>WOAT Bot Control Panel</h1>
             <p>Manage your WhatsApp and Instagram bots from one place</p>
-            <div class="source-info">
-                Source code: <a href="https://github.com/nithin434/woat.git" target="_blank">github.com/nithin434/woat</a>
+            <!-- <div class="source-info"> -->
+                <!-- Source code: <a href="https://github.com/nithin434/woat.git" target="_blank">github.com/nithin434/woat</a>
             </div>
             <div class="contact-info">
                 Contact or report issues: <a href="mailto:nithinjambula89@gmail.com">nithinjambula89@gmail.com</a> | 
                 LinkedIn: <a href="https://www.linkedin.com/in/nithin-jambula/" target="_blank">Nithin Jambula</a>
-            </div>
+            </div> -->
         </div>
           <!-- Login Section -->
         <div class="login-section" id="loginSection" style="max-width: 500px;">
@@ -556,7 +557,7 @@
         let currentBot = null;
         let currentUniqueId = null;
         let logInterval = null;
-        let serverUrl = 'https://receives-elections-tablet-void.trycloudflare.com'; // Set server URL directly
+        let serverUrl = 'https://receives-elections-tablet-void.trycloudflare.com';
         
         function verifySession() {
             const uniqueId = document.getElementById('uniqueId').value.trim();
@@ -579,10 +580,19 @@
             
             fetch(`${serverUrl}/verify-session`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ uniqueId, secretKey, email })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     currentUniqueId = uniqueId;
@@ -592,11 +602,12 @@
                     showLoginStatus('✅ Session verified successfully!', 'success');
                     startAutoRefresh();
                 } else {
-                    showLoginStatus(data.message, 'error');
+                    showLoginStatus(data.message || 'Session verification failed', 'error');
                 }
             })
             .catch(error => {
-                showLoginStatus('❌ Connection error: ' + error.message, 'error');
+                console.error('Connection error:', error);
+                showLoginStatus(`❌ Connection error: ${error.message}`, 'error');
             });
         }
         
@@ -635,9 +646,15 @@
             
             fetch(`${serverUrl}/start-whatsapp`, {
                 method: 'POST',
+                mode: 'cors',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 updateStatus(data.message, data.success ? 'success' : 'error');
                 if (data.success) {
@@ -670,9 +687,15 @@
             
             fetch(`${serverUrl}/start-instagram`, {
                 method: 'POST',
+                mode: 'cors',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 updateStatus(data.message, data.success ? 'success' : 'error');
                 if (data.success) {
@@ -687,10 +710,19 @@
         function stopBot(botType) {
             fetch(`${serverUrl}/stop-bot`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ uniqueId: currentUniqueId, botType })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 updateStatus(data.message, data.success ? 'success' : 'error');
             })
@@ -708,8 +740,19 @@
         function refreshLogs() {
             if (!currentBot || !currentUniqueId) return;
             
-            fetch(`${serverUrl}/bot-status/${currentUniqueId}/${currentBot}`)
-            .then(response => response.json())
+            fetch(`${serverUrl}/bot-status/${currentUniqueId}/${currentBot}`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 const logsContainer = document.getElementById('logsContainer');
                 logsContainer.textContent = data.logs || 'No logs available';
@@ -745,10 +788,19 @@
             
             fetch(`${serverUrl}/remove-session`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ uniqueId: currentUniqueId })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 updateStatus(data.message, data.success ? 'success' : 'error');
                 if (data.success) {
