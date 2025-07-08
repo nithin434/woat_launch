@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WOAT - Bot Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>WOAT - Bot Control Panel</title>
     <style>
         * {
             margin: 0;
@@ -205,6 +204,7 @@
         
         .form-group {
             margin-bottom: 16px;
+            ;
         }
         
         .form-group label {
@@ -412,13 +412,12 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="container">        <div class="header">
             <button class="remove-session-btn" id="removeSessionBtn" onclick="removeSession()">Remove Session</button>
             <h1>WOAT Bot Control Panel</h1>
             <p>Manage your WhatsApp and Instagram bots from one place</p>
-            <!-- <div class="source-info"> -->
-                <!-- Source code: <a href="https://github.com/nithin434/woat.git" target="_blank">github.com/nithin434/woat</a>
+            <!-- <div class="source-info">
+                Source code: <a href="https://github.com/nithin434/woat.git" target="_blank">github.com/nithin434/woat</a>
             </div>
             <div class="contact-info">
                 Contact or report issues: <a href="mailto:nithinjambula89@gmail.com">nithinjambula89@gmail.com</a> | 
@@ -428,19 +427,6 @@
           <!-- Login Section -->
         <div class="login-section" id="loginSection" style="max-width: 500px;">
             <h2>Enter Your Session Details</h2>
-            
-            <!-- Add Server Connection Test Section -->
-            <div class="credentials-info" style="background: #1a1f2e; border-color: #58a6ff;">
-                <div class="secure-badge" style="background: #1f6feb;">🌐 CONNECTION TEST</div>
-                <br>
-                <strong>Server Status:</strong> <span id="serverStatus" style="color: #f85149;">Not tested</span>
-                <br><br>
-                <button class="btn" onclick="testServerConnection()" style="font-size: 12px; padding: 4px 8px;">
-                    🔍 Test Server Connection
-                </button>
-                <div id="connectionDetails" style="margin-top: 8px; font-size: 11px; color: #7d8590;"></div>
-            </div>
-            
             <div class="credentials-info">
                 <div class="secure-badge">🔐 SECURE SESSION</div>
                 <br>
@@ -565,442 +551,411 @@
             </div>
         </div>
     </div>
-    
+
     <script>
-        let currentBot = null;
+        // Global variables
         let currentUniqueId = null;
-        let logInterval = null;
-        let serverUrl = 'https://travelers-basement-bugs-ruling.trycloudflare.com';
-        
-        // Enhanced server connection test with multiple endpoints
-        async function testServerConnection() {
-            const statusEl = document.getElementById('serverStatus');
-            const detailsEl = document.getElementById('connectionDetails');
-            
-            statusEl.textContent = 'Testing...';
-            statusEl.style.color = '#ffbf00';
-            detailsEl.innerHTML = '';
-            
-            console.log('🔍 Testing connection to:', serverUrl);
-            
-            // Test multiple endpoints
-            const endpoints = ['/health', '/cors-test', '/'];
-            let successfulEndpoint = null;
-            
-            for (const endpoint of endpoints) {
-                try {
-                    console.log(`📡 Testing endpoint: ${endpoint}`);
-                    detailsEl.innerHTML = `Testing: ${serverUrl}${endpoint}`;
-                    
-                    const startTime = Date.now();
-                    
-                    const response = await fetch(`${serverUrl}${endpoint}`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        signal: AbortSignal.timeout(15000) // 15 second timeout
-                    });
-                    
-                    const endTime = Date.now();
-                    const responseTime = endTime - startTime;
-                    
-                    console.log(`📡 Response from ${endpoint}:`, response.status, response.statusText);
-                    
-                    if (response.ok) {
-                        let data = {};
-                        try {
-                            data = await response.json();
-                        } catch (e) {
-                            data = { message: 'Server responded successfully' };
-                        }
-                        
-                        console.log(`✅ ${endpoint} successful:`, data);
-                        
-                        statusEl.textContent = 'Connected ✅';
-                        statusEl.style.color = '#3fb950';
-                        detailsEl.innerHTML = `
-                            ✅ Server is reachable via ${endpoint}<br>
-                            📡 Response time: ${responseTime}ms<br>
-                            🔧 Status: ${data.status || 'OK'}<br>
-                            💬 Message: ${data.message || 'Server running'}<br>
-                            🌐 CORS: ${data.cors || 'enabled'}
-                        `;
-                        
-                        successfulEndpoint = endpoint;
-                        break;
-                    } else {
-                        console.warn(`⚠️ ${endpoint} responded with:`, response.status, response.statusText);
-                    }
-                    
-                } catch (error) {
-                    console.warn(`❌ ${endpoint} failed:`, error.message);
-                    
-                    if (endpoint === endpoints[endpoints.length - 1] && !successfulEndpoint) {
-                        // This is the last endpoint and none worked
-                        statusEl.textContent = 'Connection Failed ❌';
-                        statusEl.style.color = '#f85149';
-                        
-                        let errorDetails = '';
-                        
-                        if (error.name === 'AbortError') {
-                            errorDetails = `
-                                ⏱️ Connection timeout (>15s)<br>
-                                🔍 Server may be down or unreachable<br>
-                                🌐 Check if server URL is correct
-                            `;
-                        } else if (error.message.includes('CORS')) {
-                            errorDetails = `
-                                🚫 CORS policy blocked the request<br>
-                                🔍 Server CORS is not properly configured<br>
-                                💡 Ask server admin to add CORS headers<br>
-                                🌐 Origin: https://nithin434.github.io
-                            `;
-                        } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                            errorDetails = `
-                                🚫 Network request blocked<br>
-                                🔍 Possible causes:<br>
-                                • Server is down: ${serverUrl}<br>
-                                • CORS not configured on server<br>
-                                • Firewall blocking request<br>
-                                • Invalid/expired tunnel URL<br><br>
-                                💡 Try refreshing the tunnel URL
-                            `;
-                        } else {
-                            errorDetails = `
-                                ❌ Error: ${error.name}<br>
-                                💬 Message: ${error.message}<br>
-                                🔍 Check browser console for details
-                            `;
-                        }
-                        
-                        detailsEl.innerHTML = errorDetails;
-                    }
-                }
-            }
-            
-            if (!successfulEndpoint) {
-                console.error('❌ All endpoints failed');
-                
-                // Try one more test with a simpler request
-                try {
-                    console.log('🔄 Attempting simple request test...');
-                    const simpleResponse = await fetch(serverUrl, {
-                        method: 'HEAD',
-                        mode: 'no-cors'
-                    });
-                    
-                    console.log('📡 Simple request succeeded, likely a CORS issue');
-                    detailsEl.innerHTML += `<br><br>🔍 Server appears to be running but CORS is blocking requests from your domain.`;
-                    
-                } catch (e) {
-                    console.log('❌ Simple request also failed');
-                    detailsEl.innerHTML += `<br><br>❌ Server appears to be completely unreachable.`;
-                }
-            }
+        let currentSecretKey = null;
+        let selectedBot = null;
+        let autoRefreshInterval = null;
+        const API_BASE = 'https://thoroughly-judge-nomination-children.trycloudflare.com'//window.location.origin; // Use current domain for API calls
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            showLoginScreen();
+        });
+
+        // Show login screen
+        function showLoginScreen() {
+            document.getElementById('loginSection').innerHTML = `
+                <h2>Access Bot Control Panel</h2>
+                <div class="credentials-info">
+                    <div class="secure-badge">SECURE</div>
+                    <p><strong>First time?</strong> Enter any unique ID and secret key to create your session.</p>
+                    <p><strong>Returning?</strong> Use your existing credentials to access your bots.</p>
+                </div>
+                <div class="form-group">
+                    <label for="uniqueId">Unique ID:</label>
+                    <input type="text" id="uniqueId" placeholder="e.g., myname@gmail.com or any unique identifier">
+                </div>
+                <div class="form-group">
+                    <label for="secretKey">Secret Key:</label>
+                    <input type="password" id="secretKey" placeholder="Enter your secret key">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email (optional):</label>
+                    <input type="email" id="email" placeholder="For notifications (optional)">
+                </div>
+                <button class="btn btn-primary" onclick="verifySession()">Access Panel</button>
+            `;
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('removeSessionBtn').classList.remove('show');
         }
-        
-        // Enhanced verify session with better error handling
-        function verifySession() {
+
+        // Verify session credentials
+        async function verifySession() {
             const uniqueId = document.getElementById('uniqueId').value.trim();
             const secretKey = document.getElementById('secretKey').value.trim();
-            const email = document.getElementById('emailAddress').value.trim();
-            
-            if (!uniqueId || !secretKey || !email) {
-                showLoginStatus('Please fill in all required fields', 'error');
+            const email = document.getElementById('email').value.trim();
+
+            if (!uniqueId || !secretKey) {
+                alert('Please enter both unique ID and secret key');
                 return;
             }
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showLoginStatus('Please enter a valid email address', 'error');
-                return;
-            }
-            
-            showLoginStatus('🔐 Connecting to secure server...', 'success');
-            console.log('🔐 Attempting session verification...');
-            console.log('📡 Server URL:', serverUrl);
-            console.log('🆔 Unique ID:', uniqueId);
-            console.log('📧 Email:', email);
-            
-            fetch(`${serverUrl}/verify-session`, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ uniqueId, secretKey, email })
-            })
-            .then(response => {
-                console.log('📡 Session verification response:', response.status, response.statusText);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ Session verification result:', data);
-                
-                if (data.success) {
+
+            try {
+                const response = await fetch(`${API_BASE}/verify-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ uniqueId, secretKey, email })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
                     currentUniqueId = uniqueId;
-                    document.getElementById('loginSection').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'block';
-                    document.getElementById('removeSessionBtn').classList.add('show');
-                    showLoginStatus('✅ Session verified successfully!', 'success');
-                    startAutoRefresh();
+                    currentSecretKey = secretKey;
+                    showMainInterface();
+                    updateStatus('Session verified successfully', 'success');
                 } else {
-                    showLoginStatus(data.message || 'Session verification failed', 'error');
+                    alert(`Error: ${result.message}`);
                 }
-            })
-            .catch(error => {
-                console.error('❌ Session verification error:', error);
-                
-                let userMessage = '';
-                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    userMessage = 'Cannot connect to server. Please test connection first.';
-                } else {
-                    userMessage = error.message;
-                }
-                
-                showLoginStatus(`❌ Connection error: ${userMessage}`, 'error');
-            });
+            } catch (error) {
+                console.error('Error verifying session:', error);
+                alert('Error connecting to server. Please check if the server is running.');
+            }
         }
-        
-        function showLoginStatus(message, type) {
-            const status = document.getElementById('loginStatus');
-            status.textContent = message;
-            status.className = type;
-        }
-        
-        function selectBot(botType) {
-            currentBot = botType;
+
+        // Show main interface after successful login
+        function showMainInterface() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('removeSessionBtn').classList.add('show');
             
-            // Reset all cards
+            document.getElementById('mainContent').innerHTML = `
+                <!-- Bot Selection -->
+                <div class="bot-selection">
+                    <div class="bot-card" onclick="selectBot('whatsapp')">
+                        <h3>WhatsApp Bot</h3>
+                        <p>Automated responses for WhatsApp messages using AI-powered conversations</p>
+                    </div>
+                    <div class="bot-card" onclick="selectBot('instagram')">
+                        <h3>Instagram Bot</h3>
+                        <p>Monitor and respond to Instagram Direct Messages automatically</p>
+                    </div>
+                </div>
+
+                <!-- WhatsApp Bot Controls -->
+                <div class="bot-controls" id="whatsappControls">
+                    <h3>WhatsApp Bot Configuration</h3>
+                    <div class="form-group">
+                        <label for="whatsappPersonality">Bot Personality:</label>
+                        <textarea id="whatsappPersonality" rows="4" placeholder="Describe how the bot should respond...">You are responding as the owner of this WhatsApp account. Be casual, friendly, and authentic. Keep responses under 40 words and use normal punctuation only.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="monitorContacts">Monitor Contacts:</label>
+                        <input type="text" id="monitorContacts" value="ALL" placeholder="ALL or specific contact names/numbers">
+                        <small>Use "ALL" to monitor everyone, or specify contact names/numbers separated by commas</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="excludeContacts">Exclude Contacts:</label>
+                        <input type="text" id="excludeContacts" placeholder="Contact names/numbers to exclude (comma separated)">
+                        <small>Contacts that should never receive auto-replies</small>
+                    </div>
+                    <button class="btn" onclick="startWhatsAppBot()">Start WhatsApp Bot</button>
+                    <button class="btn btn-danger" onclick="stopBot('whatsapp')">Stop Bot</button>
+                </div>
+
+                <!-- Instagram Bot Controls -->
+                <div class="bot-controls" id="instagramControls">
+                    <h3>Instagram Bot Configuration</h3>
+                    <div class="form-group">
+                        <label for="instagramPersonality">Bot Personality:</label>
+                        <textarea id="instagramPersonality" rows="4" placeholder="Describe how the bot should respond...">You are Nithin responding to Instagram DMs. Be casual, friendly, and authentic. Keep responses under 40 words and use normal punctuation only.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="cookiesFile">Instagram Cookies File (JSON format):</label>
+                        <input type="file" id="cookiesFile" accept=".json">
+                        <small>Use browser extension to export cookies: <a href="https://chromewebstore.google.com/detail/cmbkolgnkghmgajbbapoicfhjlabmpef" target="_blank">Export cookies to JSON</a></small>
+                    </div>
+                    <div class="info-box">
+                        <h4>Instagram Bot Setup Guide</h4>
+                        <p><strong>Step 1:</strong> Install the Chrome extension and export Instagram cookies to JSON</p>
+                        <p><strong>Step 2:</strong> Get conversation IDs from Instagram Direct URLs:</p>
+                        <ul>
+                            <li>Open Instagram in browser and go to Direct Messages</li>
+                            <li>Click on a conversation, copy the URL</li>
+                            <li>URL format: <code>instagram.com/direct/t/CONVERSATION_ID/</code></li>
+                            <li>Extract the <code>CONVERSATION_ID</code> part (long number)</li>
+                        </ul>
+                        <p><strong>Example:</strong> <code>17844616119022755</code></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="instagramUsers">Conversation IDs to Monitor (one per line):</label>
+                        <textarea id="instagramUsers" rows="4" placeholder="17844616119022755&#10;29877545839276&#10;18234567890123&#10;...">17844616119022755</textarea>
+                        <small>Tip: Each line should contain one conversation ID (numbers only)</small>
+                    </div>
+                    <button class="btn" onclick="startInstagramBot()">Start Instagram Bot</button>
+                    <button class="btn btn-danger" onclick="stopBot('instagram')">Stop Bot</button>
+                </div>
+
+                <!-- Status Section -->
+                <div class="status-section">
+                    <h3>Bot Status & Logs</h3>
+                    <div class="status-display" id="statusDisplay">
+                        Ready to start your bots...
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoRefresh" checked> Auto-refresh logs every 3 seconds
+                        </label>
+                    </div>
+                    <button class="btn" onclick="refreshLogs()">Refresh Logs</button>
+                    <button class="btn" onclick="clearLogs()">Clear Logs</button>
+                    <div class="logs-container" id="logsContainer">
+                        No logs available yet...
+                    </div>
+                </div>
+            `;
+
+            startAutoRefresh();
+        }
+
+        // Select bot type
+        function selectBot(botType) {
+            // Remove active class from all cards
             document.querySelectorAll('.bot-card').forEach(card => {
                 card.classList.remove('active');
             });
+
+            // Add active class to selected card
+            event.target.closest('.bot-card').classList.add('active');
+
+            // Hide all controls
             document.querySelectorAll('.bot-controls').forEach(control => {
                 control.style.display = 'none';
             });
-            
-            // Activate selected bot
-            document.getElementById(botType + 'Card').classList.add('active');
+
+            // Show selected bot controls
             document.getElementById(botType + 'Controls').style.display = 'block';
+            selectedBot = botType;
         }
-        
-        function startWhatsAppBot() {
+
+        // Start WhatsApp Bot
+        async function startWhatsAppBot() {
             const personality = document.getElementById('whatsappPersonality').value;
-            const contacts = document.getElementById('whatsappContacts').value;
-            const excludeContacts = document.getElementById('whatsappExclude').value;
-            
+            const contacts = document.getElementById('monitorContacts').value;
+            const excludeContacts = document.getElementById('excludeContacts').value;
+
             const formData = new FormData();
             formData.append('uniqueId', currentUniqueId);
             formData.append('personality', personality);
             formData.append('contacts', contacts);
             formData.append('excludeContacts', excludeContacts);
-            
-            fetch(`${serverUrl}/start-whatsapp`, {
-                method: 'POST',
-                mode: 'cors',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateStatus(data.message, data.success ? 'success' : 'error');
-                if (data.success) {
+
+            try {
+                updateStatus('Starting WhatsApp bot...', 'info');
+                
+                const response = await fetch(`${API_BASE}/start-whatsapp`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStatus('WhatsApp bot started successfully! Check logs below.', 'success');
                     startAutoRefresh();
+                } else {
+                    updateStatus(`Error starting WhatsApp bot: ${result.message}`, 'error');
                 }
-            })
-            .catch(error => {
-                updateStatus('Error: ' + error.message, 'error');
-            });
+            } catch (error) {
+                console.error('Error starting WhatsApp bot:', error);
+                updateStatus('Error connecting to server', 'error');
+            }
         }
-        
-        function startInstagramBot() {
+
+        // Start Instagram Bot
+        async function startInstagramBot() {
+            const cookiesFile = document.getElementById('cookiesFile').files[0];
             const personality = document.getElementById('instagramPersonality').value;
             const usersText = document.getElementById('instagramUsers').value;
-            const cookiesFile = document.getElementById('cookiesFile').files[0];
-            
+
             if (!cookiesFile) {
-                updateStatus('Please select a cookies file', 'error');
+                alert('Please select a cookies file');
                 return;
             }
-            
-            // Parse users list from textarea (one per line)
-            const usersList = usersText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            
+
+            // Parse users from textarea
+            const users = usersText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+
             const formData = new FormData();
             formData.append('uniqueId', currentUniqueId);
             formData.append('personality', personality);
-            formData.append('users', JSON.stringify(usersList));
+            formData.append('users', JSON.stringify(users));
             formData.append('cookies', cookiesFile);
-            
-            fetch(`${serverUrl}/start-instagram`, {
-                method: 'POST',
-                mode: 'cors',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateStatus(data.message, data.success ? 'success' : 'error');
-                if (data.success) {
-                    startAutoRefresh();
-                }
-            })
-            .catch(error => {
-                updateStatus('Error: ' + error.message, 'error');
-            });
-        }
-        
-        function stopBot(botType) {
-            fetch(`${serverUrl}/stop-bot`, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ uniqueId: currentUniqueId, botType })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateStatus(data.message, data.success ? 'success' : 'error');
-            })
-            .catch(error => {
-                updateStatus('Error: ' + error.message, 'error');
-            });
-        }
-        
-        function updateStatus(message, type) {
-            const status = document.getElementById('statusDisplay');
-            const timestamp = new Date().toLocaleTimeString();
-            status.innerHTML = `[${timestamp}] <span class="${type}">${message}</span>`;
-        }
-        
-        function refreshLogs() {
-            if (!currentBot || !currentUniqueId) return;
-            
-            fetch(`${serverUrl}/bot-status/${currentUniqueId}/${currentBot}`, {
-                method: 'GET',
-                mode: 'cors',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const logsContainer = document.getElementById('logsContainer');
-                logsContainer.textContent = data.logs || 'No logs available';
-                logsContainer.scrollTop = logsContainer.scrollHeight;
+
+            try {
+                updateStatus('Starting Instagram bot...', 'info');
                 
-                const status = data.running ? 'Running' : 'Stopped';
-                updateStatus(`${currentBot} bot is ${status}`, data.running ? 'success' : 'error');
-            })
-            .catch(error => {
-                updateStatus('Error fetching logs: ' + error.message, 'error');
-            });
+                const response = await fetch(`${API_BASE}/start-instagram`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStatus('Instagram bot started successfully! Check logs below.', 'success');
+                    startAutoRefresh();
+                } else {
+                    updateStatus(`Error starting Instagram bot: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error starting Instagram bot:', error);
+                updateStatus('Error connecting to server', 'error');
+            }
         }
-        
+
+        // Stop bot
+        async function stopBot(botType) {
+            try {
+                updateStatus(`Stopping ${botType} bot...`, 'info');
+                
+                const response = await fetch(`${API_BASE}/stop-bot`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        uniqueId: currentUniqueId,
+                        botType: botType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStatus(`${botType} bot stopped successfully`, 'success');
+                } else {
+                    updateStatus(`Error stopping ${botType} bot: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error stopping bot:', error);
+                updateStatus('Error connecting to server', 'error');
+            }
+        }
+
+        // Refresh logs
+        async function refreshLogs() {
+            if (!currentUniqueId || !selectedBot) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/bot-status/${currentUniqueId}/${selectedBot}`);
+                const result = await response.json();
+
+                const logsContainer = document.getElementById('logsContainer');
+                if (result.logs) {
+                    logsContainer.textContent = result.logs;
+                    logsContainer.scrollTop = logsContainer.scrollHeight;
+                }
+
+                // Update status display
+                const statusDisplay = document.getElementById('statusDisplay');
+                statusDisplay.textContent = result.running ? 
+                    `${selectedBot} bot is running` : 
+                    `${selectedBot} bot is stopped`;
+                statusDisplay.className = `status-display ${result.running ? 'success' : 'error'}`;
+
+            } catch (error) {
+                console.error('Error refreshing logs:', error);
+            }
+        }
+
+        // Clear logs
         function clearLogs() {
             document.getElementById('logsContainer').textContent = 'Logs cleared...';
         }
-        
-        function removeSession() {
-            if (!currentUniqueId) {
-                updateStatus('No active session to remove', 'error');
-                return;
-            }
-            
-            const confirmation = confirm(
-                'WARNING: This will permanently remove your session and all associated data.\n\n' +
-                'This action cannot be undone.\n\n' +
-                'Are you sure you want to proceed?'
-            );
-            
-            if (!confirmation) {
-                return;
-            }
-            
-            fetch(`${serverUrl}/remove-session`, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ uniqueId: currentUniqueId })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateStatus(data.message, data.success ? 'success' : 'error');
-                if (data.success) {
-                    // Redirect back to login after successful removal
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                }
-            })
-            .catch(error => {
-                updateStatus('Error: ' + error.message, 'error');
-            });
+
+        // Update status display
+        function updateStatus(message, type = 'info') {
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.textContent = message;
+            statusDisplay.className = `status-display ${type}`;
         }
-        
+
+        // Start auto-refresh
         function startAutoRefresh() {
-            if (logInterval) clearInterval(logInterval);
+            stopAutoRefresh();
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
             
-            logInterval = setInterval(() => {
-                if (document.getElementById('autoRefresh').checked && currentBot) {
-                    refreshLogs();
-                }
-            }, 3000);
+            if (autoRefreshCheckbox && autoRefreshCheckbox.checked) {
+                autoRefreshInterval = setInterval(refreshLogs, 3000);
+            }
         }
-        
-        // Stop auto-refresh when page is hidden
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                if (logInterval) clearInterval(logInterval);
-            } else {
-                if (document.getElementById('autoRefresh').checked) {
+
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Remove session
+        async function removeSession() {
+            if (!confirm('Are you sure you want to remove this session? This will stop all bots and delete session data.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/remove-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        uniqueId: currentUniqueId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Session removed successfully');
+                    currentUniqueId = null;
+                    currentSecretKey = null;
+                    selectedBot = null;
+                    stopAutoRefresh();
+                    showLoginScreen();
+                } else {
+                    alert(`Error removing session: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error removing session:', error);
+                alert('Error connecting to server');
+            }
+        }
+
+        // Handle auto-refresh checkbox change
+        document.addEventListener('change', function(e) {
+            if (e.target.id === 'autoRefresh') {
+                if (e.target.checked) {
                     startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
                 }
             }
         });
-        
-        // Run connection test on page load
-        window.addEventListener('load', function() {
-            console.log('🚀 Page loaded, testing server connection...');
-            console.log('🌐 Frontend origin:', window.location.origin);
-            setTimeout(testServerConnection, 1000);
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
         });
     </script>
 </body>
