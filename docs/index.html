@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>WOAT - Bot Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>WOAT - Bot Control Panel</title>
     <style>
         * {
             margin: 0;
@@ -584,67 +582,11 @@
         let currentUniqueId = null;
         let logInterval = null;
         let userCountInterval = null;
-        
-        // Try to determine the best server URL based on current protocol
-        function getServerUrl() {
-            const currentProtocol = window.location.protocol;
-            const serverHost = '104.225.221.108:3001';
-            
-            // If we're on HTTPS, we need to use HTTPS for the server too
-            if (currentProtocol === 'https:') {
-                // First try HTTPS, fallback will handle if it doesn't work
-                return `https://${serverHost}`;
-            } else {
-                // If we're on HTTP, use HTTP
-                return `http://${serverHost}`;
-            }
-        }
-        
-        let serverUrl = getServerUrl();
-        
-        // Enhanced fetch with better error handling and protocol fallback
-        async function safeFetch(url, options = {}) {
-            try {
-                // First attempt with the determined protocol
-                const response = await fetch(url, options);
-                if (!response.ok && response.status === 0) {
-                    throw new Error('Network error - possibly mixed content');
-                }
-                return response;
-            } catch (error) {
-                console.log('Primary fetch failed:', error.message);
-                
-                // If we're on HTTPS and the request failed, try HTTP
-                if (window.location.protocol === 'https:' && url.includes('https://')) {
-                    console.log('Trying HTTP fallback...');
-                    const httpUrl = url.replace('https://', 'http://');
-                    
-                    // Show user a warning about mixed content
-                    showMixedContentMessage();
-                    
-                    try {
-                        return await fetch(httpUrl, options);
-                    } catch (httpError) {
-                        console.error('HTTP fallback also failed:', httpError);
-                        throw new Error(`Connection failed: ${httpError.message}. Please check if the server is running.`);
-                    }
-                } else {
-                    throw error;
-                }
-            }
-        }
-        
-        // Show mixed content message to user
-        function showMixedContentMessage() {
-            const status = document.getElementById('loginStatus');
-            if (status && !status.innerHTML.includes('Mixed Content')) {
-                status.innerHTML += '<br><div style="color: #f85149; font-size: 12px; margin-top: 8px;">⚠️ Mixed Content detected. If requests fail, please:<br>1. Allow "insecure content" in your browser, or<br>2. Access this page via HTTP instead of HTTPS</div>';
-            }
-        }
+        let serverUrl = 'https://cv-ann-driving-estimate.trycloudflare.com' // Set server URL directly
         
         // Fetch and update live user count
         function updateLiveUserCount() {
-            safeFetch(`${serverUrl}/active-users`)
+            fetch(`${serverUrl}/active-users`)
             .then(response => response.json())
             .then(data => {
                 const userCountElement = document.getElementById('userCount');
@@ -654,7 +596,6 @@
             })
             .catch(error => {
                 console.log('Error fetching user count:', error);
-                // Don't show error to user for live count - it's not critical
             });
         }
         
@@ -691,9 +632,9 @@
                 }
             }
             
-            showLoginStatus('🔐 Connecting to server...', 'success');
+            showLoginStatus('🔐 Connecting to secure server...', 'success');
             
-            safeFetch(`${serverUrl}/verify-session`, {
+            fetch(`${serverUrl}/verify-session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ uniqueId, secretKey, email: email || null })
@@ -706,7 +647,7 @@
                     document.getElementById('mainContent').style.display = 'block';
                     document.getElementById('removeSessionBtn').classList.add('show');
                     showLoginStatus('✅ Session verified successfully!', 'success');
-                    stopUserCountUpdates();
+                    stopUserCountUpdates(); // Stop user count updates when logged in
                     startAutoRefresh();
                 } else {
                     showLoginStatus(data.message, 'error');
@@ -750,7 +691,7 @@
             formData.append('contacts', contacts);
             formData.append('excludeContacts', excludeContacts);
             
-            safeFetch(`${serverUrl}/start-whatsapp`, {
+            fetch(`${serverUrl}/start-whatsapp`, {
                 method: 'POST',
                 body: formData
             })
@@ -785,7 +726,7 @@
             formData.append('users', JSON.stringify(usersList));
             formData.append('cookies', cookiesFile);
             
-            safeFetch(`${serverUrl}/start-instagram`, {
+            fetch(`${serverUrl}/start-instagram`, {
                 method: 'POST',
                 body: formData
             })
@@ -802,7 +743,7 @@
         }
         
         function stopBot(botType) {
-            safeFetch(`${serverUrl}/stop-bot`, {
+            fetch(`${serverUrl}/stop-bot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ uniqueId: currentUniqueId, botType })
@@ -825,7 +766,7 @@
         function refreshLogs() {
             if (!currentBot || !currentUniqueId) return;
             
-            safeFetch(`${serverUrl}/bot-status/${currentUniqueId}/${currentBot}`)
+            fetch(`${serverUrl}/bot-status/${currentUniqueId}/${currentBot}`)
             .then(response => response.json())
             .then(data => {
                 const logsContainer = document.getElementById('logsContainer');
@@ -860,7 +801,7 @@
                 return;
             }
             
-            safeFetch(`${serverUrl}/remove-session`, {
+            fetch(`${serverUrl}/remove-session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ uniqueId: currentUniqueId })
